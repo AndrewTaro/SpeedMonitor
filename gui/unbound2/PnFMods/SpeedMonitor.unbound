@@ -1,1 +1,37 @@
+(def constant SPEED_MONITOR_COMPONENT_KEY "'modSpeedMonitor'")
 
+(def element TargetLockItem (_markerEntity:gfx) layout=true
+	(scope
+		(macro GET_MARKER_ENTITY_COMPONENT 'target')
+		(var targetFlags:number = "targetComponent ? targetComponent.flags : 0" (event "targetComponent.evChanged") (event "targetComponent.evFlagsChanged"))
+
+		(var isTargetLocked:bool = "(targetFlags & LOCKABLE_WEAPONS) > 0")
+
+        # Mod
+        (var speedsEntityWatcher:gfx = "$datahub.getPrimWatcher(CC.mods_DataComponent, SPEED_MONITOR_COMPONENT_KEY)")
+		(var speedsEntity:gfx = "speedsEntityWatcher.entity" (event "speedsEntityWatcher.event"))
+
+		(var dataComponent:gfx = "speedsEntity ? speedsEntity.mods_DataComponent : null" (event "speedsEntity.evAdded"))
+		(var speeds:dict = "dataComponent ? dataComponent.data.speeds : null" (event "dataComponent.evDataChanged"))
+
+        (var keyId:str = "toString(_markerEntity.id)")
+        (var currentSpeed:number = "speeds && keyId in speeds ? speeds[keyId] : 0.0")
+        (var speedStr:str = "formatFloatingPoint(currentSpeed, 1, true) + 'kts'")
+
+        (var camera:gfx = "$datahub.getSingleComponent(CC.camera)")
+        (var altVision:bool = "camera.altVision" (event "camera.evAltVisionChanged"))
+        #
+	)
+
+	(mc AimForShipIcon_pro
+		(style (marginTop = -1)) 
+		(bindcall gotoAndStop "isTargetLocked ? 'vis' : 'inv'" init=true watch=false)
+		(bindcall gotoAndPlay "isTargetLocked ? 'in' : 'out'" init=false)
+	)
+
+	# Mod
+    (element SimpleMarkerTextItem "speedStr"
+        (bind visible "isTargetLocked || altVision")
+    )
+	#
+)
